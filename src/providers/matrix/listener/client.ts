@@ -6,8 +6,8 @@ import {
  * MatrixListenerClient
  */
 export class MatrixListenerClient extends MatrixClient {
-    identity?: string;
-    e2eeMode?: boolean;
+    declare identity: string;
+    declare e2eeMode: boolean;
 
     /**
      * Starts syncing the client with an optional filter

@@ -20,7 +20,10 @@
     "image-type": "^4.1.0",
     "images": "^3.2.4",
     "inquirer": "^8.2.4",
+    "js-sha256": "^0.9.0",
     "matrix-bot-sdk": "^0.5.19",
+    "sequelize": "^6.21.2",
+    "sqlite3": "^5.0.8",
     "ts-node": "^10.4.0"
   },
   "devDependencies": {

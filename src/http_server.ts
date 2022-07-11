@@ -6,7 +6,7 @@ import express, {
 
 import {
     expressMapper,
-} from "./provider/line/listener";
+} from "./providers/line/listener";
 
 // Define the port to expose the application on.
 const exposePort = process.env.HTTP_EXPOSE_PORT || 3000;

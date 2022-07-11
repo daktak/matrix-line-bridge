@@ -6,7 +6,7 @@ import {
 
 import {
     homeserverUrl,
-} from "./src/provider/matrix";
+} from "./src/providers/matrix";
 
 import inquirer from "inquirer";
 

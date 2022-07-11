@@ -1,10 +1,42 @@
 import {
+    Client as LineClient,
+    WebhookEvent as LineWebhookEvent,
+} from "@line/bot-sdk";
+
+import {
+    getSourceIdFromEvent,
+} from "../line/utils";
+
+import {
     Sender,
 } from "../../sender";
 
 import {
     client,
 } from "./index";
+
+export class MatrixSender extends Sender {
+    static async fromLineSource(
+        lineClient: LineClient,
+        sourceId: string,
+        senderId: string,
+    ): Promise<MatrixSender> {
+        const profile =
+            await lineClient.getGroupMemberProfile(sourceId, senderId);
+        return new MatrixSender(profile);
+    }
+
+    static async fromLineEvent(
+        lineClient: LineClient,
+        event: LineWebhookEvent,
+    ): Promise<MatrixSender> {
+        const [sourceId, senderId] =
+            getSourceIdFromEvent(event, true) as Array<string>;
+        const profile =
+            await lineClient.getGroupMemberProfile(sourceId, senderId);
+        return new MatrixSender(profile);
+    }
+}
 
 export type ThumbnailInfo = {
     mimetype?: string;
@@ -30,13 +62,14 @@ export type ImageMessageOptions = {
  * @return {Promise<string>}
  */
 export function sendTextMessage(
-    sender: Sender,
+    sender: MatrixSender,
     text: string,
     roomId: string,
 ): Promise<string> {
+    const prefix = sender.isSystem ? "⬥" : "⬦";
     return client.sendMessage(roomId, {
         "msgtype": "m.text",
-        "body": `${sender.displayName}: ${text}`,
+        "body": `${prefix}${sender.displayName}:\n${text}`,
     });
 }
 
@@ -49,16 +82,17 @@ export function sendTextMessage(
  * @return {Promise<string>}
  */
 export function sendImageMessage(
-    sender: Sender,
+    sender: MatrixSender,
     imageUrl: string,
     roomId: string,
     options: ImageMessageOptions = {},
 ): Promise<string> {
+    const prefix = sender.isSystem ? "⬥" : "⬦";
     (async () => sendTextMessage(sender, "Image:", roomId))();
     return client.sendMessage(roomId, {
         "msgtype": "m.image",
         "url": imageUrl,
-        "body": `${sender.displayName}: Image:`,
+        "body": `${prefix}${sender.displayName}: Image:`,
         "info": {
             "mimetype": options.mimetype,
             "size": options.size,

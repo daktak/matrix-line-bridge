@@ -8,10 +8,16 @@ import {
 export class Sender {
     displayName?: string;
     pictureUrl?: string;
+    isSystem = false;
 
     /**
      * Constructor
-     * @param {Partial<Sender>} init {displayName: string, pictureUrl: string}
+     * @param {Partial<Sender>} init
+     *  {
+     *      displayName: string,
+     *      pictureUrl: string,
+     *      isSystem: boolean,
+     *  }
      */
     constructor(init: Partial<Sender>) {
         Object.assign(this, init);
@@ -26,5 +32,13 @@ export class Sender {
             name: this.displayName,
             iconUrl: this.pictureUrl,
         };
+    }
+
+    static system(): Sender {
+        const systemName = process.env.DEVICE_NAME || "System";
+        return new Sender({
+            displayName: systemName,
+            isSystem: true,
+        });
     }
 }
