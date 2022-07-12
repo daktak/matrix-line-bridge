@@ -1,8 +1,4 @@
 import {
-    Sender,
-} from "../../../../sender";
-
-import {
     MessageEvent,
     FileMessageEventContent,
 } from "matrix-bot-sdk";
@@ -12,12 +8,12 @@ import {
 } from "../client";
 
 import {
+    LineSender,
     sendImageMessage,
     ImageMessageOptions,
 } from "../../../line/sender";
 
-const matrixChatRoomId = process.env.MATRIX_CHAT_ROOM_ID || "";
-const lineChatRoomId = process.env.LINE_CHAT_ROOM_ID || "";
+import RoomMap from "../../../../models/RoomMap";
 
 export default async (
     listenerClient: MatrixListenerClient,
@@ -26,16 +22,17 @@ export default async (
 ): Promise<undefined> => {
     const messageEvent = new MessageEvent<FileMessageEventContent>(event.raw);
 
-    if (roomId !== matrixChatRoomId) return;
-
-    const senderProfile =
-        await listenerClient.getUserProfile(messageEvent.sender);
-    const senderIconHttp =
-        listenerClient.mxcToHttp(senderProfile.avatar_url);
-    const sender: Sender = new Sender({
-        displayName: senderProfile.displayname,
-        pictureUrl: senderIconHttp,
+    const roomMap = await RoomMap.findOne({
+        where: {
+            matrixTo: roomId,
+            lineMode: process.env.LINE_SEND_MESSAGE_MODE,
+        },
     });
+    if (!roomMap) return;
+
+    const sender = await LineSender.fromMatrixEvent(
+        listenerClient, event,
+    );
 
     const mxcUrl = messageEvent.content.url;
     const thumbnailMxcUrl =
@@ -48,5 +45,15 @@ export default async (
         thumbnailUrl: thumbnailHttpUrl,
     };
 
-    sendImageMessage(sender, httpUrl, lineChatRoomId, sendOptions);
+    if (!roomMap.lineTo) {
+        console.error("lineTo is not set");
+        return;
+    }
+
+    sendImageMessage(
+        sender,
+        httpUrl,
+        roomMap.lineTo as string,
+        sendOptions,
+    );
 };

@@ -1,8 +1,4 @@
 import {
-    Sender,
-} from "../../../../sender";
-
-import {
     MessageEvent,
     StickerEventMessage,
     MessageAPIResponseBase,
@@ -14,6 +10,7 @@ import {
 } from "../../utils";
 
 import {
+    MatrixSender,
     sendImageMessage,
 } from "../../../matrix/sender";
 
@@ -25,8 +22,7 @@ import {
     client as matrixClient,
 } from "../../../matrix";
 
-const matrixChatRoomId = process.env.MATRIX_CHAT_ROOM_ID || "";
-const lineChatRoomId = process.env.LINE_CHAT_ROOM_ID || "";
+import RoomMap from "../../../../models/RoomMap";
 
 export default async (
     event: MessageEvent,
@@ -36,14 +32,26 @@ export default async (
 
     const [sourceId, senderId] =
         getSourceIdFromEvent(event, true) as Array<string>;
-    if (sourceId !== lineChatRoomId) return;
 
-    const senderProfile =
-        await lineClient.getGroupMemberProfile(sourceId, senderId);
-    const sender: Sender = new Sender(senderProfile);
+    const roomMap = await RoomMap.findOne({
+        where: {
+            lineHookFrom: sourceId,
+            lineMode: process.env.LINE_SEND_MESSAGE_MODE,
+        },
+    });
+    if (!roomMap) return;
+
+    const sender = await MatrixSender.fromLineSource(
+        lineClient, sourceId, senderId,
+    );
 
     const sourceImageUrl = getStickerImageUrl(stickerId);
     const mxcUrl: string =
         await matrixClient.uploadContentFromUrl(sourceImageUrl);
-    sendImageMessage(sender, mxcUrl, matrixChatRoomId);
+
+    sendImageMessage(
+        sender,
+        mxcUrl,
+        roomMap.matrixTo,
+    );
 };

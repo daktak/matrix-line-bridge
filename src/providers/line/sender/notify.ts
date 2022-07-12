@@ -29,43 +29,47 @@ type Message = {
 };
 
 const sendMessage =
-    (message: Message): Promise<AxiosResponse> =>
-        notifyClient.post("/api/notify", stringify(message));
+    (notifyToken: string, message: Message): Promise<AxiosResponse> =>
+        notifyClient(notifyToken).post("/api/notify", stringify(message));
 
 /**
  * Send a text message to the chat room.
  * @param {Sender} sender The sender of the message.
  * @param {string} text The text to send.
+ * @param {string} notifyToken The notify token to the chat room.
  * @return {Promise<AxiosResponse>}
  */
 export function sendTextMessage(
     sender: Sender,
     text: string,
+    notifyToken: string,
 ): Promise<AxiosResponse> {
+    const prefix = sender.isSystem ? "⬥" : "⬦";
     const message: Message = {
-        message: `${sender.displayName}: ${text}`,
+        message: `${prefix}${sender.displayName}:\n${text}`,
     };
-    return sendMessage(message);
+    return sendMessage(notifyToken, message);
 }
 
 /**
  * Send an image message to the chat room.
  * @param {Sender} sender The sender of the message.
  * @param {string} imageUrl URL of the image.
- * @param {string} _ Please make the field empty.
+ * @param {string} notifyToken The notify token to the chat room.
  * @param {ImageMessageOptions} options The options to send image message.
  * @return {Promise<AxiosResponse>}
  */
 export function sendImageMessage(
     sender: Sender,
     imageUrl: string,
-    _: string,
+    notifyToken: string,
     options: ImageMessageOptions = {},
 ): Promise<AxiosResponse> {
+    const prefix = sender.isSystem ? "⬥" : "⬦";
     const message: Message = {
-        message: `${sender.displayName}: Image:`,
+        message: `${prefix}${sender.displayName}: Image:`,
         imageFullsize: imageUrl,
         imageThumbnail: options.thumbnailUrl || imageUrl,
     };
-    return sendMessage(message);
+    return sendMessage(notifyToken, message);
 }

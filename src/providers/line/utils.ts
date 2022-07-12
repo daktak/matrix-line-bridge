@@ -2,6 +2,43 @@ import {
     EventBase,
 } from "@line/bot-sdk";
 
+import {sha256} from "js-sha256";
+
+function generatePairVerifyCode(
+    matrixRoomId: string,
+    lineRoomId: string,
+    timestamp: number,
+): string {
+    return sha256([
+        matrixRoomId, lineRoomId, timestamp,
+    ].join("-")).substring(0, 8);
+}
+
+export function generatePairCode(
+    matrixRoomId: string,
+    lineRoomId: string,
+): string {
+    const timestamp = Math.round(Date.now() / 1000);
+    const verifyCode = generatePairVerifyCode(
+        matrixRoomId, lineRoomId, timestamp,
+    );
+    return `${matrixRoomId}-${timestamp}-${verifyCode}`;
+}
+
+export function verifyPairCode(
+    matrixRoomId: string,
+    lineRoomId: string,
+    codeTimestamp: number,
+    verifyCode: string,
+): boolean {
+    const timestamp = Math.round(Date.now() / 1000);
+    const expectedVerifyCode = generatePairVerifyCode(
+        matrixRoomId, lineRoomId, codeTimestamp,
+    );
+    const isExpired = timestamp - codeTimestamp > 3_600;
+    return expectedVerifyCode === verifyCode && !isExpired;
+}
+
 /**
  * Get a sticker image URL from the sticker shop.
  * @param {string} stickerId

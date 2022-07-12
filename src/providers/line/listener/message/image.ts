@@ -1,8 +1,4 @@
 import {
-    Sender,
-} from "../../../../sender";
-
-import {
     MessageEvent,
     ImageEventMessage,
     MessageAPIResponseBase,
@@ -13,6 +9,7 @@ import {
 } from "../../utils";
 
 import {
+    MatrixSender,
     sendImageMessage,
     ThumbnailInfo,
     ImageMessageOptions,
@@ -26,11 +23,10 @@ import {
     client as matrixClient,
 } from "../../../matrix";
 
+import RoomMap from "../../../../models/RoomMap";
+
 import images, {FILE_TYPE} from "images";
 import imageType, {ImageTypeResult} from "image-type";
-
-const matrixChatRoomId = process.env.MATRIX_CHAT_ROOM_ID || "";
-const lineChatRoomId = process.env.LINE_CHAT_ROOM_ID || "";
 
 export default async (
     event: MessageEvent,
@@ -40,11 +36,18 @@ export default async (
 
     const [sourceId, senderId] =
         getSourceIdFromEvent(event, true) as Array<string>;
-    if (sourceId !== lineChatRoomId) return;
 
-    const senderProfile =
-        await lineClient.getGroupMemberProfile(sourceId, senderId);
-    const sender: Sender = new Sender(senderProfile);
+    const roomMap = await RoomMap.findOne({
+        where: {
+            lineHookFrom: sourceId,
+            lineMode: process.env.LINE_SEND_MESSAGE_MODE,
+        },
+    });
+    if (!roomMap) return;
+
+    const sender = await MatrixSender.fromLineSource(
+        lineClient, sourceId, senderId,
+    );
 
     const contentStream = await lineClient.getMessageContent(id);
     const contentChunks: Buffer[] = [];
@@ -88,5 +91,10 @@ export default async (
         thumbnailInfo,
     };
 
-    sendImageMessage(sender, mxcUrl, matrixChatRoomId, sendOptions);
+    sendImageMessage(
+        sender,
+        mxcUrl,
+        roomMap.matrixTo,
+        sendOptions,
+    );
 };
