@@ -66,6 +66,10 @@ export function sendTextMessage(
     text: string,
     roomId: string,
 ): Promise<string> {
+    /** if roomId is null
+     *  roomId = client.RoomCreate({invite: [MATRIX_USER], name: ${sender.chatRoomName}
+     *  roomMapCreate -- update
+     */
     const prefix = sender.isSystem ? "⬥" : "⬦";
     return client.sendMessage(roomId, {
         "msgtype": "m.text",
